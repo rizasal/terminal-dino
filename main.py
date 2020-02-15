@@ -3,14 +3,40 @@ import curses
 import sys
 import math
 
+import locale
+
+locale.setlocale(locale.LC_ALL, '')
+code = locale.getpreferredencoding()
+
+class Cactus:
+    def __init__(self, x, y, stdscr):
+        self.x = x
+        self.y = y
+
+        self.jumping = False
+        self.stdscr = stdscr    
+
+    def update(self):
+        if self.x > 0:
+            self.x -=1
+            self.stdscr.addstr(self.y, self.x, 'dino!')
+
 class Dino:
     def __init__(self, stdscr):
-        self.x = 0
-        self.y = 20
+        self.x = 10
+        self.y = 15
 
         self.dy = self.dy_yield()
         self.jumping = False
         self.stdscr = stdscr
+
+        self.dino_map = [
+            [0,0,0,0,0,1],
+            [1,1,1,1,1,0],
+            [1,1,1,1,1,0],
+            [1,0,0,0,1,0],
+            [1,0,0,0,1,0],
+        ]
     
     def dy_yield(self):
         for i in range(5):
@@ -32,8 +58,16 @@ class Dino:
                 self.dy = 0
                 self.jumping = False
         
-        self.stdscr.addstr(self.y, self.x, 'dino!')
-        
+        self.draw()
+    
+    def draw(self):
+        for row_index, i in enumerate(self.dino_map):
+            for col_index, j in enumerate(i):
+                if j == 1:
+                    self.stdscr.addstr(
+                        self.y + row_index,
+                        self.x +col_index,
+                        bytes(u'\u2588'''.encode(code)))
 
 class Game:
     def __init__(self):
