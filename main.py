@@ -8,6 +8,34 @@ import locale
 locale.setlocale(locale.LC_ALL, '')
 code = locale.getpreferredencoding()
 
+ascii_numbers = [
+'''
+ 3333
+33  33
+   333
+33  33
+ 3333
+''','''
+ 2222
+22  22
+   22
+  22
+222222
+''',
+'''
+1111
+  11
+  11
+  11
+111111''',
+]
+clear_text = '''
+                               
+                             
+                            
+                          
+'''
+
 class Obstacle:
     def __init__(self, game_object, x, y, h):
         self.x = x
@@ -29,7 +57,7 @@ class Obstacle:
                     self.stdscr.addstr(
                         self.y + row_index,
                         int(self.x) +col_index,
-                        bytes(u'\u2588'.encode(code)))
+                        '|', curses.A_STANDOUT)
     
     def update(self):
         self.x -= 1.5
@@ -42,8 +70,8 @@ class Obstacle:
 
             if dino.x-1 <= self.x <= (dino.x + dino.dino_box_dimension[0]):
                 if dino.y <= self.y <=dino.y + dino.dino_box_dimension[1] or dino.y <= self.y+ self.h <=dino.y + dino.dino_box_dimension[1]:
-                    self.game_object.destroy()
-                    sys.exit()
+                    # self.game_object.destroy()
+                    self.game_object.reset()
 
 
 class Dino:
@@ -108,12 +136,28 @@ class Dino:
                     self.stdscr.addstr(
                         self.y + row_index,
                         self.x + col_index,
-                        bytes(u'''\u2588'''.encode(code)))
+                        '.', curses.A_STANDOUT)
         self.dino_map_array_pointer += 1
+
+class Score:
+    def __init__(self, stdscr):
+        self.score = 0
+        self.stdscr = stdscr
+        self.y, self.x = 2, stdscr.getmaxyx()[1] - 15
+    
+    def update(self):
+        self.score += 1
+        self.draw()
+    
+    def draw(self):
+        self.stdscr.addstr(self.y, self.x, 'SCORE :{}'.format(str(self.score)), curses.A_STANDOUT)
+
 
 class Game:
     def __init__(self):
+        self.reset()
 
+    def reset(self):
         self.stdscr = curses.initscr()
         # tweak terminal settings
         curses.noecho()
@@ -124,6 +168,8 @@ class Game:
         self.rows_max, self.cols_max = self.stdscr.getmaxyx()
 
         self.dino = Dino(self.stdscr)
+        
+        self.score = Score(self.stdscr)
 
         self.array_obstacles = [
             Obstacle(self, self.cols_max - 1, self.rows_max, 2)
@@ -131,7 +177,22 @@ class Game:
         self.next_obstacle_generate_time = 0
 
         # update the screen
+
         self.stdscr.refresh()
+        self.update()
+
+        self.loading()
+
+    def loading(self):
+        
+        for ascii_number in ascii_numbers:
+            for y, line in enumerate(clear_text.splitlines(), 2):
+                self.stdscr.addstr(y, 2, line)
+            self.stdscr.refresh()
+            for y, line in enumerate(ascii_number.splitlines(), 2):
+                self.stdscr.addstr(y, 2, line)
+            self.stdscr.refresh()
+            time.sleep(1)
 
     def update(self):
         self.stdscr.clear()
@@ -140,6 +201,9 @@ class Game:
         if k == 27:
             self.destroy()
             sys.exit()
+        
+        if k == 98:
+            self.reset()
         
         elif k == 97:
             self.dino.jump()
@@ -153,6 +217,7 @@ class Game:
                 Obstacle(self, self.cols_max - 1, self.rows_max, random.randint(1,3))
             )
         self.dino.update()
+        self.score.update()
         self.stdscr.refresh()
 
     def destroy(self):
@@ -168,7 +233,7 @@ class Game:
         curses.endwin()
 
 if __name__ == "__main__":
-    frame_rate = 30
+    frame_rate = 40
     prev = 0
     game = Game()
 
