@@ -65,7 +65,7 @@ class Obstacle:
         if self.x < 3:
             self.game_object.array_obstacles.remove(self)
 
-        if self.x < self.game_object.cols_max / 4:
+        if self.x < 15:
             dino = self.game_object.dino
 
             if dino.x-1 <= self.x <= (dino.x + dino.dino_box_dimension[0]):
@@ -75,13 +75,14 @@ class Obstacle:
 
 
 class Dino:
-    def __init__(self, stdscr):
-        self.rows_max, self.cols_max = stdscr.getmaxyx()
+    def __init__(self, game_object):
+        self.game_object = game_object
+        self.rows_max, self.cols_max = game_object.stdscr.getmaxyx()
 
 
         self.dy = self.dy_yield()
         self.jumping = False
-        self.stdscr = stdscr
+        self.stdscr = game_object.stdscr
 
         self.dino_map_array_pointer = 0
         self.dino_map = [[
@@ -100,7 +101,7 @@ class Dino:
         self.dino_box_dimension = (len(self.dino_map), len(self.dino_map[0]))
 
         self.x = 10
-        self.y = self.rows_max - len(self.dino_map[0])
+        self.y = self.game_object.ground_level - len(self.dino_map[0])
 
 
     
@@ -170,7 +171,7 @@ class Game:
 
     def initialize_obstacles(self):
         self.array_obstacles = [
-            Obstacle(self, self.cols_max - 1, self.rows_max, 2)
+            Obstacle(self, self.cols_max - 1, self.ground_level, 2)
         ]
         self.next_obstacle_generate_time = 0
 
@@ -179,8 +180,9 @@ class Game:
         self.set_max_dimensions()
 
         self.ground_level = self.rows_max - 3
+        self.ground_string = '=' * (self.cols_max - 3)
 
-        self.dino = Dino(self.stdscr)
+        self.dino = Dino(self)
         self.score = Score(self.stdscr)
         self.initialize_obstacles()
 
@@ -204,6 +206,8 @@ class Game:
 
     def handle_key_press(self):
         k = self.stdscr.getch()
+        if k == curses.ERR:
+            return
         if k == 27:
             self.destroy()
             sys.exit()
@@ -222,8 +226,12 @@ class Game:
         if self.next_obstacle_generate_time - time.time() < 0:
             self.next_obstacle_generate_time = time.time() + random.randint(1, 5)
             self.array_obstacles.append(
-                Obstacle(self, self.cols_max - 1, self.rows_max, random.randint(2,4))
+                Obstacle(self, self.cols_max - 1, self.ground_level, random.randint(2,4))
             )
+
+    def draw_ground(self):
+        self.stdscr.addstr(self.ground_level, 3, self.ground_string)
+
 
     def update(self):
         self.stdscr.clear()
@@ -234,6 +242,7 @@ class Game:
 
         self.dino.update()
         self.score.update()
+        self.draw_ground()
         self.stdscr.refresh()
 
     def destroy(self):
