@@ -157,79 +157,90 @@ class Game:
     def __init__(self):
         self.reset()
 
-    def reset(self):
+    def curses_initialize_screen(self):
         self.stdscr = curses.initscr()
-        # tweak terminal settings
         curses.noecho()
         curses.cbreak()
         self.stdscr.keypad(True)
         curses.curs_set(0)
         self.stdscr.nodelay(1)
+
+    def set_max_dimensions(self):
         self.rows_max, self.cols_max = self.stdscr.getmaxyx()
 
-        self.dino = Dino(self.stdscr)
-        
-        self.score = Score(self.stdscr)
-
+    def initialize_obstacles(self):
         self.array_obstacles = [
             Obstacle(self, self.cols_max - 1, self.rows_max, 2)
         ]
         self.next_obstacle_generate_time = 0
 
-        # update the screen
+    def reset(self):
+        self.curses_initialize_screen()
+        self.set_max_dimensions()
+
+        self.ground_level = self.rows_max - 3
+
+        self.dino = Dino(self.stdscr)
+        self.score = Score(self.stdscr)
+        self.initialize_obstacles()
+
+        self.show_loading_animation()
+
+    def show_loading_animation(self):
+
+        def draw_multiline_string(s):
+            for y, line in enumerate(s.splitlines(), 2):
+                self.stdscr.addstr(y, 2, line)
+
+            self.stdscr.refresh()
 
         self.stdscr.refresh()
         self.update()
 
-        self.loading()
-
-    def loading(self):
-        
         for ascii_number in ascii_numbers:
-            for y, line in enumerate(clear_text.splitlines(), 2):
-                self.stdscr.addstr(y, 2, line)
-            self.stdscr.refresh()
-            for y, line in enumerate(ascii_number.splitlines(), 2):
-                self.stdscr.addstr(y, 2, line)
-            self.stdscr.refresh()
+            draw_multiline_string(clear_text)
+            draw_multiline_string(ascii_number)
             time.sleep(1)
 
-    def update(self):
-        self.stdscr.clear()
-        self.rows, self.cols = self.stdscr.getmaxyx()
+    def handle_key_press(self):
         k = self.stdscr.getch()
         if k == 27:
             self.destroy()
             sys.exit()
-        
-        if k == 98:
+
+        elif k == 98:
             self.reset()
-        
+
         elif k == 97:
             self.dino.jump()
 
+    def draw_obstacles(self):
         for obstacle in self.array_obstacles:
             obstacle.draw()
 
+    def generate_next_obstacle(self):
         if self.next_obstacle_generate_time - time.time() < 0:
-            self.next_obstacle_generate_time = time.time() + random.randint(1, 6)
+            self.next_obstacle_generate_time = time.time() + random.randint(1, 5)
             self.array_obstacles.append(
-                Obstacle(self, self.cols_max - 1, self.rows_max, random.randint(1,3))
+                Obstacle(self, self.cols_max - 1, self.rows_max, random.randint(2,4))
             )
+
+    def update(self):
+        self.stdscr.clear()
+        self.set_max_dimensions()
+        self.handle_key_press()
+        self.draw_obstacles()
+        self.generate_next_obstacle()
+
         self.dino.update()
         self.score.update()
         self.stdscr.refresh()
 
     def destroy(self):
-        # clear the screen
         self.stdscr.clear()
-
-        # reverse terminal settings
         curses.nocbreak()
         self.stdscr.keypad(False)
         curses.echo()
-
-        # close the application
         curses.endwin()
 
 if __name__ == "__main__":
