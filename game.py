@@ -18,6 +18,7 @@ class Game:
         curses.cbreak()
         self.stdscr.keypad(True)
         curses.curs_set(0)
+        self.stdscr.border()
         self.stdscr.nodelay(1)
 
     def set_max_dimensions(self):
@@ -88,7 +89,7 @@ class Game:
 
 
     def update(self):
-        self.stdscr.clear()
+        self.stdscr.erase()
         self.set_max_dimensions()
         self.handle_key_press()
         self.draw_obstacles()
