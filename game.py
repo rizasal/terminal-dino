@@ -13,7 +13,10 @@ class Game:
         self.reset()
 
     def curses_initialize_screen(self):
-        self.stdscr = curses.initscr()
+        self.global_window = curses.initscr()
+        self.stdscr = curses.newwin(20, 50, 0, 0)
+        self.output_win = curses.newpad(100, 100)
+        self.output_win_line = 0
         curses.noecho()
         curses.cbreak()
         self.stdscr.keypad(True)
@@ -57,7 +60,7 @@ class Game:
         for ascii_number in ascii_numbers:
             draw_multiline_string(clear_text)
             draw_multiline_string(ascii_number)
-            time.sleep(1)
+            # time.sleep(1)
 
     def handle_key_press(self):
         k = self.stdscr.getch()
@@ -81,14 +84,13 @@ class Game:
         if self.next_obstacle_generate_time - time.time() < 0:
             self.next_obstacle_generate_time = time.time() + random.randint(1, 5)
             self.array_obstacles.append(
-                Obstacle(self, self.cols_max - 1, self.ground_level, random.randint(2,4))
+                Obstacle(self, self.cols_max - 1, self.ground_level, random.randint(2, 4))
             )
 
     def draw_ground(self):
         self.stdscr.addstr(self.ground_level, 3, self.ground_string)
 
-
-    def update(self):
+    def update(self, line=''):
         self.stdscr.erase()
         self.set_max_dimensions()
         self.handle_key_press()
@@ -98,6 +100,11 @@ class Game:
         self.dino.update()
         self.score.update()
         self.draw_ground()
+        if line:
+            self.output_win.addstr(1 + self.output_win_line, 1, line)
+            self.output_win_line += 1
+            startline = self.output_win_line-10 if self.output_win_line > 10 else 0
+            self.output_win.refresh(startline, 0, 20, 0, 30, 30)
         self.stdscr.refresh()
 
     def destroy(self):
