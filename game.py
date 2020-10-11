@@ -8,6 +8,9 @@ from dino import Dino
 from score import Score
 from ascii_numbers import ascii_numbers, clear_text
 
+class ExitGame(Exception):
+    pass
+
 class Game:
     def __init__(self):
         self.reset()
@@ -68,7 +71,7 @@ class Game:
             return
         if k == 27:
             self.destroy()
-            sys.exit()
+            raise ExitGame()
 
         elif k == 98:
             self.reset()
